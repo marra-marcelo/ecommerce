@@ -12,6 +12,7 @@ class User extends Model{
 	const SECRET = "HcodePhp7_Secret";
 	const ERROR = "UserError";
 	const ERROR_REGISTER = "UserErrorRegister";
+	const SUCCESS = "UserSuccess";
 
 	public static function getFromSession()
 	{
@@ -86,7 +87,6 @@ class User extends Model{
 		{
 			throw new \Exception("Usuário inexistente ou senha inválida.");
 		}
-
 	}
 
 	public static function verifyLogin($inadmin = true)
@@ -110,7 +110,6 @@ class User extends Model{
 	{
 		$_SESSION[User::SESSION] = NULL;
 	}
-
 
 	public static function listAll()
 	{
@@ -233,10 +232,8 @@ class User extends Model{
 				$mailer->send();
 
 				return $link;
-			}
-			
+			}	
 		}
-
 	}
 
 	public static function validForgotDecrypt($result)
@@ -263,7 +260,6 @@ class User extends Model{
 				{
 					return $results[0];
 				} 
-
 			} 
 
 			public static function setForgotUsed($idrecovery)
@@ -328,6 +324,25 @@ class User extends Model{
 				$_SESSION[User::ERROR_REGISTER] = NULL;
 			}
 
+			public static function setSuccess($msg)
+			{
+				$_SESSION[User::SUCCESS] = $msg;
+			}
+
+			public static function getSuccess()
+			{
+				$msg = (isset($_SESSION[User::SUCCESS]) && $_SESSION[User::SUCCESS]) ? $_SESSION[User::SUCCESS] : '';
+
+				User::clearSuccess();
+
+				return $msg;
+			}
+
+			public static function clearSuccess()
+			{
+				$_SESSION[User::SUCCESS] = NULL;
+			}
+
 			public static function checkLoginExist($login)
 			{
 				$sql = new Sql();
@@ -345,9 +360,6 @@ class User extends Model{
 					'cost'=>12
 				]);
 			}
-
-			
-
 
 }
 
