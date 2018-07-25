@@ -230,7 +230,6 @@ class Cart extends Model{
 		{
 
 		}
-
 	}
 
 	public static function formatValueToDecimal($value):float
@@ -269,7 +268,6 @@ class Cart extends Model{
 		$this->getCalculateTotal();
 
 		return parent::getValues();
-
 	}
 
 	public function getCalculateTotal()
@@ -281,7 +279,6 @@ class Cart extends Model{
 		$this->setvlsubtotal($totals['vlprice']);
 		$this->setvltotal($totals['vlprice'] + $this->getvlfreight());
 	}
-
 }
 
 	
