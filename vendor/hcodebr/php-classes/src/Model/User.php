@@ -115,7 +115,7 @@ class User extends Model{
 	{
 		$sql = new Sql();
 
-		return $sql->select("SELECT * FROM tb_users a INNER JOIN tb_persons b USING(idperson) ORDER BY desperson");
+		return $sql->select("SELECT * FROM tb_users a INNER JOIN tb_persons b USING(idperson) ORDER BY b.desperson");
 	}
 
 	public function save()
@@ -237,150 +237,203 @@ class User extends Model{
 	}
 
 	public static function validForgotDecrypt($result)
-			{
+	{
 
-				$result = base64_decode($result);
+		$result = base64_decode($result);
 
-				$code = mb_substr($result, openssl_cipher_iv_length('aes-256-cbc'), null, '8bit');
+		$code = mb_substr($result, openssl_cipher_iv_length('aes-256-cbc'), null, '8bit');
 
-				$iv = mb_substr($result, 0, openssl_cipher_iv_length('aes-256-cbc'), '8bit');
+		$iv = mb_substr($result, 0, openssl_cipher_iv_length('aes-256-cbc'), '8bit');
 
-				$idrecovery = openssl_decrypt($code, 'aes-256-cbc', User::SECRET, 0, $iv);
+		$idrecovery = openssl_decrypt($code, 'aes-256-cbc', User::SECRET, 0, $iv);
 
-				$sql = new Sql();
+		$sql = new Sql();
 
-				$results = $sql->select("SELECT * FROM tb_userspasswordsrecoveries a INNER JOIN tb_users b USING(iduser) INNER JOIN tb_persons c USING(idperson) WHERE a.idrecovery = :idrecovery AND a.dtrecovery IS NULL AND DATE_ADD(a.dtregister, INTERVAL 1 HOUR) >= NOW();", array(":idrecovery"=>$idrecovery));
+		$results = $sql->select("SELECT * FROM tb_userspasswordsrecoveries a INNER JOIN tb_users b USING(iduser) INNER JOIN tb_persons c USING(idperson) WHERE a.idrecovery = :idrecovery AND a.dtrecovery IS NULL AND DATE_ADD(a.dtregister, INTERVAL 1 HOUR) >= NOW();", array(":idrecovery"=>$idrecovery));
 
-				if(count($results) === 0)
-				{
-					throw new \Exception("Não foi possível recuperar a senha.");
-				}
-
-				else
-				{
-					return $results[0];
-				} 
-			} 
-
-			public static function setForgotUsed($idrecovery)
-			{
-				$sql = new Sql();
-
-				$sql->query("UPDATE tb_eserpasswordsrecoveries SET dtrecovery = NOW() WHERE idrecovery = :idrecovery", array(
-					":idrecovery"=>$idrecovery
-				));
-			}
-
-			public function setPassword($password)
-			{
-				$sql = new Sql();
-
-				$sql->query("UPDATE tb_users SET despassword = :password WHERE iduser = :iduser", array(
-					":password"=>$password,
-					":iduser"=>$this->getiduser()
-				));
-			}
-
-			public static function setError($msg)
-			{
-				$_SESSION[User::ERROR] = $msg;
-			}
-
-			public static function getError()
-			{
-				$msg = (isset($_SESSION[User::ERROR]) && $_SESSION[User::ERROR]) ? $_SESSION[User::ERROR] : '';
-
-				User::clearError();
-
-				return $msg;
-			}
-
-			public static function clearError()
-			{
-				$_SESSION[User::ERROR] = NULL;
-			}
-
-			public static function setErrorMessage($msg)
-			{
-				$_SESSION[User::ERROR_REGISTER] = $msg;
-			}
-
-			public static function setErrorRegister($msg)
-			{
-				$_SESSION[User::ERROR_REGISTER] = $msg;
-			}
-
-			public static function getErrorRegister()
-			{
-				$msg = (isset($_SESSION[User::ERROR_REGISTER]) && $_SESSION[User::ERROR_REGISTER]) ? $_SESSION[User::ERROR_REGISTER] : '';
-
-				User::clearErrorRegister();
-
-				return $msg;
-			}
-
-			public static function clearErrorRegister()
-			{
-				$_SESSION[User::ERROR_REGISTER] = NULL;
-			}
-
-			public static function setSuccess($msg)
-			{
-				$_SESSION[User::SUCCESS] = $msg;
-			}
-
-			public static function getSuccess()
-			{
-				$msg = (isset($_SESSION[User::SUCCESS]) && $_SESSION[User::SUCCESS]) ? $_SESSION[User::SUCCESS] : '';
-
-				User::clearSuccess();
-
-				return $msg;
-			}
-
-			public static function clearSuccess()
-			{
-				$_SESSION[User::SUCCESS] = NULL;
-			}
-
-			public static function checkLoginExist($login)
-			{
-				$sql = new Sql();
-
-				$results = $sql->select("SELECT * FROM tb_users WHERE deslogin = :deslogin",[
-					':deslogin'=>$login
-				]);
-
-				return (count($results) > 0);	
-			}
-
-			public static function getPasswordHash($password)
-			{
-				return password_hash($password, PASSWORD_DEFAULT, [
-					'cost'=>12
-				]);
-			}
-
-			public function getOrders()
+		if(count($results) === 0)
 		{
-			$sql = new Sql();
+			throw new \Exception("Não foi possível recuperar a senha.");
+		}
 
-			$results = $sql->select("
-				SELECT *
-				FROM tb_orders a
-				INNER JOIN tb_ordersstatus b USING(idstatus)
-				INNER JOIN tb_carts c USING(idcart)
-				INNER JOIN tb_users d ON d.iduser = a.iduser
-				INNER JOIN tb_addresses e USING(idaddress)
-				INNER JOIN tb_persons f ON f.idperson = d.idperson
-				WHERE a.iduser = :iduser
-				", [
-				':iduser'=>$this->getiduser()
+		else
+		{
+			return $results[0];
+		} 
+	} 
+
+	public static function setForgotUsed($idrecovery)
+	{
+		$sql = new Sql();
+
+		$sql->query("UPDATE tb_eserpasswordsrecoveries SET dtrecovery = NOW() WHERE idrecovery = :idrecovery", array(
+			":idrecovery"=>$idrecovery
+		));
+	}
+
+	public function setPassword($password)
+	{
+		$sql = new Sql();
+
+		$sql->query("UPDATE tb_users SET despassword = :password WHERE iduser = :iduser", array(
+			":password"=>$password,
+			":iduser"=>$this->getiduser()
+		));
+	}
+
+	public static function setError($msg)
+	{
+		$_SESSION[User::ERROR] = $msg;
+	}
+
+	public static function getError()
+	{
+		$msg = (isset($_SESSION[User::ERROR]) && $_SESSION[User::ERROR]) ? $_SESSION[User::ERROR] : '';
+
+		User::clearError();
+
+		return $msg;
+	}
+
+	public static function clearError()
+	{
+		$_SESSION[User::ERROR] = NULL;
+	}
+
+	public static function setErrorMessage($msg)
+	{
+		$_SESSION[User::ERROR_REGISTER] = $msg;
+	}
+
+	public static function setErrorRegister($msg)
+	{
+		$_SESSION[User::ERROR_REGISTER] = $msg;
+	}
+
+	public static function getErrorRegister()
+	{
+		$msg = (isset($_SESSION[User::ERROR_REGISTER]) && $_SESSION[User::ERROR_REGISTER]) ? $_SESSION[User::ERROR_REGISTER] : '';
+
+		User::clearErrorRegister();
+
+		return $msg;
+	}
+
+	public static function clearErrorRegister()
+	{
+		$_SESSION[User::ERROR_REGISTER] = NULL;
+	}
+
+	public static function setSuccess($msg)
+	{
+		$_SESSION[User::SUCCESS] = $msg;
+	}
+
+	public static function getSuccess()
+	{
+		$msg = (isset($_SESSION[User::SUCCESS]) && $_SESSION[User::SUCCESS]) ? $_SESSION[User::SUCCESS] : '';
+
+		User::clearSuccess();
+
+		return $msg;
+	}
+
+	public static function clearSuccess()
+	{
+		$_SESSION[User::SUCCESS] = NULL;
+	}
+
+	public static function checkLoginExist($login)
+	{
+		$sql = new Sql();
+
+		$results = $sql->select("SELECT * FROM tb_users WHERE deslogin = :deslogin",[
+			':deslogin'=>$login
+		]);
+
+		return (count($results) > 0);	
+	}
+
+	public static function getPasswordHash($password)
+	{
+		return password_hash($password, PASSWORD_DEFAULT, [
+			'cost'=>12
+		]);
+	}
+
+	public function getOrders()
+	{
+	$sql = new Sql();
+
+	$results = $sql->select("
+		SELECT *
+		FROM tb_orders a
+		INNER JOIN tb_ordersstatus b USING(idstatus)
+		INNER JOIN tb_carts c USING(idcart)
+		INNER JOIN tb_users d ON d.iduser = a.iduser
+		INNER JOIN tb_addresses e USING(idaddress)
+		INNER JOIN tb_persons f ON f.idperson = d.idperson
+		WHERE a.iduser = :iduser
+		", [
+		':iduser'=>$this->getiduser()
+		]);
+
+		return $results;
+	}
+
+	public static function getPage($page = 1, $itensPerPage = 10)
+	{
+		$start = ($page - 1) * $itensPerPage;
+
+		$sql = new Sql();
+
+		$results = $sql->select("
+			SELECT SQL_CALC_FOUND_ROWS *
+			FROM tb_users a 
+			INNER JOIN tb_persons b USING(idperson) 
+			ORDER BY b.desperson
+			LIMIT $start, $itensPerPage;
+			");
+
+		$resultTotal = $sql->select("SELECT FOUND_ROWS() AS nrtotal;");
+
+		return [
+			'data'=>$results,
+			'total'=>(int)$resultTotal[0]["nrtotal"],
+			'pages'=>ceil($resultTotal[0]["nrtotal"] / $itensPerPage)
+		];
+	}
+
+	public static function getPageSearch($search, $page = 1, $itensPerPage = 10)
+	{
+		$start = ($page - 1) * $itensPerPage;
+
+		$sql = new Sql();
+
+		$results = $sql->select("
+			SELECT SQL_CALC_FOUND_ROWS *
+			FROM tb_users a 
+			INNER JOIN tb_persons b USING(idperson)
+			WHERE b.desperson LIKE :search OR b.desemail = :search OR a.deslogin LIKE :search 
+			ORDER BY b.desperson
+			LIMIT $start, $itensPerPage;
+			", [
+				':search'=>'%' . $search . '%'
 				]);
 
-			return $results;
+		$resultTotal = $sql->select("SELECT FOUND_ROWS() AS nrtotal;");
+
+		return [
+			'data'=>$results,
+			'total'=>(int)$resultTotal[0]["nrtotal"],
+			'pages'=>ceil($resultTotal[0]["nrtotal"] / $itensPerPage)
+		];
 	}
+
+
+
 }
+
 
 	
 
